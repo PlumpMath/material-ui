@@ -3,7 +3,7 @@
 import React from 'react';
 import {
   applyRouterMiddleware,
-  hashHistory,
+  browserHistory,
   Router,
   Route,
   IndexRoute,
@@ -17,11 +17,37 @@ import MarkdownDocs from 'docs/src/components/MarkdownDocs';
 import Home from 'docs/src/pages/Home';
 import { componentAPIs, requireMarkdown, demos, requireDemo } from 'docs/src/components/files';
 
+// Extra logic for handling anchor links.
+function shouldUpdateScroll(prevRouterProps, routerProps) {
+  const hash = routerProps.location.hash;
+
+  // We have no hash to take into account.
+  // We let react-router handling it.
+  if (hash === '') {
+    return true;
+  }
+
+  // It's our first navigation.
+  if (!prevRouterProps) {
+    // Push onto callback queue so it runs after the DOM is updated,
+    // this is required when navigating from a different page so that
+    // the element is rendered on the page before trying to getElementById.
+    setTimeout(() => {
+      const element = document.querySelector(hash);
+      if (element) {
+        element.scrollIntoView();
+      }
+    }, 0);
+  }
+
+  return false;
+}
+
 export default function AppRouter() {
   return (
     <Router
-      history={hashHistory}
-      render={applyRouterMiddleware(useScroll())}
+      history={browserHistory}
+      render={applyRouterMiddleware(useScroll(shouldUpdateScroll))}
     >
       <Route title="Material UI" path="/" component={AppFrame}>
         <IndexRoute dockDrawer component={Home} title={null} />
